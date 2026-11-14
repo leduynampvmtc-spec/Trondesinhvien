@@ -1,0 +1,4 @@
+TỰ HỌC TOEIC (bản sinh viên) — v2.2
+Phần mềm được tạo bởi Lê Duy Nam — Giảng viên Trường Cao đẳng Dầu khí
+Gồm: Sổ từ vựng TOEIC (tuvung/) + Luyện đề TOEIC (luyende.html). Không cần Google Sheet, không có trang giáo viên.
+Đưa TOÀN BỘ nội dung thư mục này lên 1 repository riêng, bật Pages. Link gửi sinh viên = địa chỉ gốc của trang.

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Luyện đề TOEIC — tự học</title>
+<meta name="description" content="Sinh viên tự nạp bộ đề TOEIC và tự luyện thi — phần mềm của Lê Duy Nam, Giảng viên Trường Cao đẳng Dầu khí">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="img/icon-192.png">
+<link rel="apple-touch-icon" href="img/icon-192.png">
+<meta name="theme-color" content="#0b3d5c">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<style>
+  body.exam { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  .topbar .btn.sm { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3); color: #fff; }
+  .btn.big { padding: 13px 20px; font-size: 1.03rem; border-radius: 12px; }
+  .btn.wide { display: block; width: 100%; margin-top: 10px; padding: 12px; }
+  .addc .howto { margin-top: 12px; font-size: .9rem; color: var(--ink-2); }
+  .addc .howto summary { cursor: pointer; font-weight: 600; color: var(--brand-2); }
+  .addc .howto ul { padding-left: 18px; margin: 8px 0 0; line-height: 1.6; }
+  .setgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; margin-top: 16px; }
+  .setgrid .card { margin: 0; min-width: 0; }
+  .setc h3 { margin: 0 0 2px; font-size: 1.12rem; overflow-wrap: anywhere; }
+  .setc .tags, .ptags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .acts .btn { padding: 12px 8px; text-align: center; }
+  .acts.sm { grid-template-columns: repeat(4, auto); justify-content: start; gap: 6px; }
+  .acts.sm .btn { padding: 6px 10px; }
+  .empty { text-align: center; margin-top: 16px; padding: 34px 18px; }
+  .empty .big { font-size: 2.6rem; }
+  .rules { font-size: .93rem; color: var(--ink-2); padding-left: 18px; margin: 8px 0 12px; line-height: 1.6; }
+  .seg { display: flex; border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .seg button { flex: 1; padding: 10px 6px; border: 0; background: var(--card); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; }
+  .seg button + button { border-left: 1.5px solid var(--line); }
+  .seg button.on { background: var(--brand-2); color: #fff; }
+  .qbar { position: sticky; top: 0; z-index: 5; background: var(--card); border-bottom: 1px solid var(--line); }
+  .qbar .wrap { display: flex; align-items: center; gap: 10px; min-height: 60px; }
+  .prog { height: 4px; background: var(--line); } .prog > i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+  .tbox { flex: none; min-width: 70px; text-align: center; padding: 4px 8px; border-radius: 10px; background: var(--soft); border: 1px solid var(--line); line-height: 1.15; }
+  .tbox small { display: block; font-size: .66rem; color: var(--muted); }
+  .tbox b { font-variant-numeric: tabular-nums; font-size: 1rem; }
+  .tbox.low b { color: var(--bad); }
+  .ell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .actl { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .actl select { width: auto; padding: 6px 8px; }
+  .apart .abar.seek { cursor: pointer; height: 10px; }
+  .bkview.turn { animation: turn .9s ease; }
+  @keyframes turn { 0% { box-shadow: 0 0 0 4px var(--accent); } 100% { box-shadow: 0 0 0 0 transparent; } }
+  .ab.ok { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .ab.bad { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .ab[disabled] { cursor: default; opacity: 1; }
+  .pal { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 7px; }
+  .pb { height: 38px; border-radius: 9px; border: 1.5px solid var(--line); background: var(--card); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; }
+  .pb.ans { background: var(--brand-2); border-color: var(--brand-2); color: #fff; }
+  .pb.ok { background: var(--ok); border-color: var(--ok); color: #fff; } .pb.bad { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .lg { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid var(--line); vertical-align: -1px; margin: 0 3px 0 8px; }
+  .lg.ans { background: var(--brand-2); border-color: var(--brand-2); } .lg.ok { background: var(--ok); border-color: var(--ok); } .lg.bad { background: var(--bad); border-color: var(--bad); }
+  .done { text-align: center; }
+  .bigscore { font-size: 3.4rem; font-weight: 800; color: var(--brand); line-height: 1.1; margin-top: 8px; }
+  .skrow { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 14px 0 4px; }
+  .skc { min-width: 130px; padding: 10px 14px; border-radius: 12px; background: var(--soft); border: 1px solid var(--line); }
+  .skc small { display: block; color: var(--muted); } .skc b { font-size: 1.3rem; } .skc span { display: block; font-size: .82rem; color: var(--ink-2); }
+  .ptags { justify-content: center; }
+  .rv { cursor: pointer; } .rv:hover { background: var(--soft); }
+  .done .acts { max-width: 520px; margin-left: auto; margin-right: auto; }
+  @media (max-width: 480px) { .qbar .wrap { gap: 7px; } .tbox { min-width: 60px; } .acts.sm { grid-template-columns: repeat(4, 1fr); } .acts.sm .btn { padding: 6px 4px; font-size: .78rem; } .addc .btn.big { width: 100%; } .done .acts { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div id="app"><div class="wrap" style="padding:40px 16px"><p class="muted">Đang mở…</p></div></div>
+<div class="modal-bg" id="modal"><div class="modal" id="modalBody"></div></div>
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script src="js/docx.js"></script>
+<script src="js/anskey.js"></script>
+<script src="js/booklet.js"></script>
+<script src="js/etskey.js"></script>
+<script src="js/luyende.js"></script>
+<script>if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+BẢN ANDROID (.apk) — TỰ HỌC TOEIC (sinh viên)
+1. Đưa toàn bộ nội dung thư mục này lên repo (như bản web).
+2. Trên repo: Add file -> Create new file -> gõ tên:  .github/workflows/build-apk.yml
+   -> mở file build-apk.yml (trong gói này) bằng Notepad / TextEdit, chép toàn bộ, dán vào -> Commit changes.
+   (Nếu khi kéo thả đã có sẵn thư mục .github trên repo thì bỏ qua bước này.)
+3. Tab Actions -> "Build APK Android" -> đợi dấu tick xanh (khoảng 3–5 phút) -> bấm vào lần chạy -> Artifacts
+   -> tải TuHocToeic-Android -> giải nén được file TuHocToeic-Android-2.2.0.apk -> gửi sinh viên (Zalo, Drive).
+4. Sinh viên cài: mở file .apk -> cho phép "Cài ứng dụng không rõ nguồn gốc" -> Cài đặt.
+5. Cập nhật sau này: sửa dòng APP_VER trong build-apk.yml (vd '2.2.1') rồi Commit -> tải APK mới -> cài đè (giữ nguyên bộ đề đã nạp).
+Nạp đề trên Android: nên để mỗi bộ đề trong 1 file .zip (hoặc 1 file .zip nhiều Test) ở Tệp / Drive / Zalo, bấm ＋ Nạp bộ đề rồi chọn file đó.
