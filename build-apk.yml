@@ -1,14 +1,11 @@
 # Tự động đóng gói bản Android (.apk) của phần mềm Tự học TOEIC (sinh viên): Sổ từ vựng + Luyện đề TOEIC
-# Mỗi lần cập nhật trang web: tăng APP_VER bên dưới để máy sinh viên cài đè được bản mới.
+# KHÔNG cần sửa file này khi cập nhật: số phiên bản lấy từ version.txt, mã phiên bản tự tăng, chữ ký cố định (apk-key.jks).
 name: Build APK Android
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
-env:
-  APP_VER: '2.2.1'
 
 jobs:
   android:
@@ -31,8 +28,12 @@ jobs:
         run: |
           set -e
           SITE=""
-          VER="$APP_VER"
-          CODE=$(node -p "const v='$APP_VER'.split('.').map(Number);v[0]*10000+v[1]*100+(v[2]||0)")
+          # số phiên bản lấy từ file version.txt (đi kèm gói web); mã phiên bản tự tăng theo số lần chạy → luôn cài đè được
+          VER=$(head -1 version.txt 2>/dev/null | tr -cd '0-9.'); [ -n "$VER" ] || VER="2.2"
+          CODE=$((20000 + GITHUB_RUN_NUMBER))
+          # chữ ký cố định (apk-key.jks đi kèm gói) → bản mới cài đè lên bản cũ, giữ nguyên bộ đề đã nạp
+          KEYCFG=""
+          if [ -f apk-key.jks ]; then KEYCFG="signingConfigs { fixed { storeFile file('../../apk-key.jks'); storePassword 'tuhoctoeic'; keyAlias 'tuhoctoeic'; keyPassword 'tuhoctoeic' } }; buildTypes { debug { signingConfig signingConfigs.fixed } }"; fi
           A=android; rm -rf $A; mkdir -p $A/app/src/main/java/vn/edu/pvcollege/tuhoctoeic $A/app/src/main/res/values $A/app/src/main/res/mipmap $A/app/src/main/assets
           W=$A/app/src/main/assets/app; mkdir -p $W
           cp index.html luyende.html manifest.webmanifest $W/
@@ -61,6 +62,7 @@ jobs:
                   buildConfigField 'String', 'SITE_URL', '"$SITE"'
               }
               buildFeatures { buildConfig true }
+              $KEYCFG
               compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
           }
           dependencies { implementation 'androidx.webkit:webkit:1.11.0' }
@@ -225,10 +227,10 @@ jobs:
           exit $CODE
       - name: Doi ten APK
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk TuHocToeic-Android-$APP_VER.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk TuHocToeic-Android.apk
       - uses: actions/upload-artifact@v6
         with:
           name: TuHocToeic-Android
-          path: TuHocToeic-Android-*.apk
+          path: TuHocToeic-Android.apk
           if-no-files-found: error
           retention-days: 30
