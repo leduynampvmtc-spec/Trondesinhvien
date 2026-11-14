@@ -7,6 +7,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   android:
     runs-on: ubuntu-24.04
@@ -36,7 +39,7 @@ jobs:
           if [ -f apk-key.jks ]; then KEYCFG="signingConfigs { fixed { storeFile file('../../apk-key.jks'); storePassword 'tuhoctoeic'; keyAlias 'tuhoctoeic'; keyPassword 'tuhoctoeic' } }; buildTypes { debug { signingConfig signingConfigs.fixed } }"; fi
           A=android; rm -rf $A; mkdir -p $A/app/src/main/java/vn/edu/pvcollege/tuhoctoeic $A/app/src/main/res/values $A/app/src/main/res/mipmap $A/app/src/main/assets
           W=$A/app/src/main/assets/app; mkdir -p $W
-          cp index.html luyende.html manifest.webmanifest $W/
+          cp index.html luyende.html huongdan.html manifest.webmanifest $W/
           cp -r css img js tuvung $W/
           rm -f $W/sw.js $W/tuvung/sw.js
           cp img/icon-512.png $A/app/src/main/res/mipmap/ic_launcher.png
@@ -234,3 +237,11 @@ jobs:
           path: TuHocToeic-Android.apk
           if-no-files-found: error
           retention-days: 30
+      - name: Dua APK len muc Releases (link tai cong khai, co dinh)
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view apk >/dev/null 2>&1 || gh release create apk --title "Tu hoc TOEIC - ban Android (.apk)" --notes "File cai dat ban Android cua phan mem Tu hoc TOEIC. Tai file TuHocToeic-Android.apk ben duoi, mo file va bam Cai dat."
+          gh release upload apk TuHocToeic-Android.apk --clobber
