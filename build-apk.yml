@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  APP_VER: '2.2.0'
+  APP_VER: '2.2.1'
 
 jobs:
   android:

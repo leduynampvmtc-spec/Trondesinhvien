@@ -11,6 +11,7 @@
   const LET = 'ABCD';
   const app = $('#app');
   const READ_MIN = 75;
+  const LIM = () => S.st.limit || 0;
 
   /* ============================ lưu trữ trên máy ============================ */
   const DB = {
@@ -65,6 +66,74 @@
     } catch (e) { /* bỏ qua */ }
   }
 
+  /* ===================== dò mốc lật trang từ file nghe (v2.2.1) =====================
+   * File nghe liền từng Part (không phải file từng câu) không có sẵn mốc thời gian của từng câu.
+   * Băng TOEIC luôn có quãng lặng sau mỗi câu (Part 1–2: ~5 giây, Part 3–4: ~8 giây) → dò các quãng lặng dài,
+   * đếm TỪ CUỐI file (bỏ qua phần hướng dẫn đầu Part) để biết lúc băng bắt đầu đọc từng câu. */
+  async function envelope(buf) {
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) throw new Error('máy không hỗ trợ');
+    let ab = null;
+    for (const sr of [8000, 22050, 44100]) {
+      try { const c = new OAC(1, 1, sr); ab = await new Promise((res, rej) => { const pr = c.decodeAudioData(buf.slice(0), res, rej); if (pr && pr.catch) pr.catch(rej); }); break; }
+      catch (e) { /* thử tần số lấy mẫu khác */ }
+    }
+    if (!ab) throw new Error('không đọc được file nghe');
+    const sr = ab.sampleRate, W = Math.max(1, Math.round(sr * 0.05)), n = Math.floor(ab.length / W), e = new Float32Array(n);
+    const chs = []; for (let c = 0; c < Math.min(2, ab.numberOfChannels); c++) chs.push(ab.getChannelData(c));
+    for (let i = 0; i < n; i++) { let q = 0; for (const ch of chs) for (let j = i * W, m = j + W; j < m; j++) q += ch[j] * ch[j]; e[i] = Math.sqrt(q / (W * chs.length)); }
+    return { e, dt: W / sr, dur: ab.duration };
+  }
+  /** Các quãng lặng dài ≥ minLen giây: [{a, b}] (giây); quãng lặng chạm cuối file có end = true */
+  function silences(env, minLen) {
+    const e = env.e, dt = env.dt, n = e.length, srt = Float32Array.from(e).sort(), p95 = srt[Math.floor(n * 0.95)] || 0;
+    const thr = Math.max(p95 * 0.04, 0.0012), q = new Uint8Array(n), out = [];
+    for (let i = 0; i < n; i++) q[i] = e[i] < thr ? 1 : 0;
+    // tiếng lách tách rất ngắn (≤ 0,15 giây) nằm giữa quãng lặng vẫn coi là lặng
+    for (let i = 1; i < n - 1; i++) if (!q[i] && q[i - 1]) { let m = i; while (m < n && !q[m] && m - i < 3) m++; if (m < n && q[m]) for (let x = i; x < m; x++) q[x] = 1; }
+    for (let i = 0, a = -1; i <= n; i++) {
+      if (i < n && q[i]) { if (a < 0) a = i; continue; }
+      if (a >= 0) { const len = (i - a) * dt, end = i >= n; if (len >= minLen || (end && len >= 1.5)) out.push({ a: a * dt, b: i * dt, end }); a = -1; }
+    }
+    return out;
+  }
+  /** nums: số câu của Part (tăng dần). Trả về [{n, t}] hoặc null nếu không chắc */
+  function marksFromEnv(env, k, nums) {
+    const N = nums.length; if (N < 2) return null;
+    const p34 = (i) => (k === '3' || k === '4') ? i : (k === 'all' ? i - 31 : -1); // vị trí trong chuỗi Part 3–4 (nhóm 3 câu)
+    for (const minLen of (k === '3' || k === '4') ? [6, 5, 4, 3.5] : [3.5, 3, 2.5]) {
+      const G = silences(env, minLen); let best = null;
+      // 3 cách ghép: N quãng lặng cuối = sau câu 1..N; lùi 1 (có lời chào kết + lặng ở cuối); thiếu quãng lặng sau câu cuối
+      for (const c of [{ j: G.length - N, n: N }, { j: G.length - N - 1, n: N }, { j: G.length - (N - 1), n: N - 1 }]) {
+        if (c.j < 0 || c.n < 1) continue;
+        let ok = 0, tot = 0;
+        for (let i = 0; i < c.n; i++) {
+          const g = G[c.j + i], prev = c.j + i > 0 ? G[c.j + i - 1].b : 0, sp = g.a - prev, q = p34(i);
+          if (i === 0 || (k === 'all' && (i === 6 || i === 31 || i === 70))) continue; // sau phần hướng dẫn: dài ngắn tùy đề
+          tot++;
+          if (q >= 0) { if (q % 3 === 0 ? sp >= 12 : (sp >= 1 && sp <= 14)) ok++; }
+          else if (sp >= 2.5 && sp <= 45) ok++;
+        }
+        const sc = tot ? ok / tot : 0;
+        if (!best || sc > best.sc + 0.02) best = { sc, c };
+      }
+      if (best && best.sc >= 0.85) {
+        const mk = [{ n: nums[0], t: 0 }];
+        for (let i = 1; i < N; i++) { const g = G[best.c.j + i - 1]; if (!g) break; mk.push({ n: nums[i], t: Math.max(0, Math.round((g.b - 0.4) * 10) / 10) }); }
+        if (mk.length === N) return mk;
+      }
+    }
+    return null;
+  }
+  async function detectMarks(set, k) {
+    const name = set.book.parts[k], ref = name && set.audio && set.audio[name]; if (!ref) return null;
+    const r = await DB.get('blobs', ref.id); if (!r) return null;
+    const buf = r instanceof Blob ? await r.arrayBuffer() : r.buf;
+    const nums = set.questions.filter(q => q.skill === 'L' && (k === 'all' || String(q.part) === k)).map(q => +q.num).sort((a, b) => a - b);
+    return marksFromEnv(await envelope(buf), k, nums);
+  }
+  window.__tl = { envelope, silences, marksFromEnv };
+
   /* ================================ cửa sổ ================================ */
   function modal(html) { $('#modalBody').innerHTML = html; $('#modal').classList.add('on'); }
   function closeModal() { $('#modal').classList.remove('on'); $('#modalBody').innerHTML = ''; }
@@ -100,10 +169,11 @@
       const nL = s.questions.filter(q => q.skill === 'L').length, nR = s.questions.filter(q => q.skill === 'R').length;
       const pk = Object.keys(s.book.parts || {}), mk = Object.keys(s.book.marks || {});
       const noKey = s.questions.filter(q => !q.correct.length).length;
-      const aud = !nL ? '' : !pk.length ? '<span class="pill bad">chưa có file nghe</span>' : mk.length ? '<span class="pill ok">tự lật trang theo từng câu nghe</span>' : '<span class="pill">file nghe ' + (pk.includes('all') ? 'liền 1 file' : pk.length + ' Part') + '</span>';
+      const noPg = nL && !s.questions.some(q => q.skill === 'L' && q.page != null);
+      const aud = !nL ? '' : !pk.length ? '<span class="pill bad">chưa có file nghe</span>' : mk.length ? '<span class="pill ok">tự lật trang theo từng câu nghe</span>' : '<span class="pill">file nghe ' + (pk.includes('all') ? 'liền 1 file' : pk.length + ' Part') + ' · dò mốc lật trang khi làm lần đầu</span>';
       return '<div class="card setc" data-set="' + s.id + '"><div class="row" style="align-items:flex-start"><div style="min-width:0;flex:1"><h3>' + esc(s.name) + '</h3>' +
         '<div class="hint">' + s.book.pages.length + ' trang đề · ' + (nL ? 'Nghe ' + nL + ' câu' : '') + (nL && nR ? ' · ' : '') + (nR ? 'Đọc ' + nR + ' câu' : '') + '</div>' +
-        '<div class="tags">' + aud + (noKey ? '<span class="pill warn">' + noKey + ' câu chưa có đáp án</span>' : '') + (hs.length ? '<span class="pill">đã làm ' + hs.length + ' lần</span>' : '') + (best ? '<span class="pill ok">cao nhất ' + best + ' điểm TOEIC</span>' : '') + '</div></div></div>' +
+        '<div class="tags">' + aud + (noPg ? '<span class="pill bad">phần Nghe chưa có “câu đầu mỗi trang” → không tự lật trang (bấm Sửa đáp án)</span>' : '') + (noKey ? '<span class="pill warn">' + noKey + ' câu chưa có đáp án</span>' : '') + (hs.length ? '<span class="pill">đã làm ' + hs.length + ' lần</span>' : '') + (best ? '<span class="pill ok">cao nhất ' + best + ' điểm TOEIC</span>' : '') + '</div></div></div>' +
         (cur ? '<button class="btn accent wide" data-act="resume">▶ Làm tiếp bài đang dở (' + (cur.mode === 'exam' ? 'Thi thử' : 'Luyện tập') + ')</button>' : '') +
         '<div class="acts"><button class="btn primary" data-act="exam">📝 Thi thử</button><button class="btn primary" data-act="practice">🎯 Luyện tập</button></div>' +
         '<div class="acts sm"><button class="btn sm" data-act="hist"' + (hs.length ? '' : ' disabled') + '>Lịch sử</button><button class="btn sm" data-act="edit">Sửa đáp án</button><button class="btn sm" data-act="rename">Đổi tên</button><button class="btn sm danger" data-act="del">Xóa</button></div></div>';
@@ -147,16 +217,38 @@
     modal('<h2 style="margin-top:0">' + (mode === 'exam' ? '📝 Thi thử' : '🎯 Luyện tập') + ' — ' + esc(s.name) + '</h2>' +
       (mode === 'exam'
         ? '<ul class="rules"><li>File nghe phát <b>1 lần</b>, tự chuyển Part 1 → 4, không tạm dừng, không tua.</li>' +
-          '<li>Trang đề <b>tự lật theo file nghe</b>' + (marks ? ' — ngay khi băng sang câu ở trang sau (sau câu “Go on to the next page”)' : ' khi sang Part mới (bộ này dùng file nghe liền từng Part nên trong 1 Part em tự bấm <b>Trang sau</b>)') + '. <b>Không quay lại</b> trang đã qua của phần Nghe.</li>' +
-          '<li>Hết phần Nghe tự sang phần Đọc: <b>' + READ_MIN + ' phút</b>, hết giờ tự nộp. Trong phần Đọc em <b>xem lại, sửa đáp án tự do</b>; không quay lại phần Nghe.</li></ul>'
-        : '<ul class="rules"><li><b>Quay lại trang trước</b> thoải mái, cả phần Nghe.</li><li>File nghe: tạm dừng, tua ±10 giây, nghe lại từng Part, đổi tốc độ.</li><li>Bấm <b>👁 Đáp án trang này</b> để kiểm tra ngay; không giới hạn thời gian.</li></ul>') +
+          '<li>Trang đề <b>tự lật theo file nghe</b>' + (marks ? ' — ngay khi băng sang câu ở trang sau (sau câu “Go on to the next page”)' : ' — bộ này dùng file nghe liền từng Part nên lần đầu phần mềm sẽ dò mốc từng câu trong file nghe (mất khoảng nửa phút)') + '. <b>Không quay lại</b> trang đã qua của phần Nghe.</li>' +
+          '<li>Hết phần Nghe tự sang phần Đọc, đồng hồ <b>đếm ngược</b> theo số phút em đặt bên dưới, hết giờ tự nộp. Trong phần Đọc em <b>xem lại, sửa đáp án tự do</b>; không quay lại phần Nghe.</li></ul>'
+        : '<ul class="rules"><li><b>Quay lại trang trước</b> thoải mái, cả phần Nghe.</li><li>File nghe: tạm dừng, tua ±10 giây, nghe lại từng Part, đổi tốc độ.</li><li>Bấm <b>👁 Đáp án trang này</b> để kiểm tra ngay; muốn tính giờ thì đặt đồng hồ đếm ngược bên dưới.</li></ul>') +
       (hasL && hasR ? '<label>Làm phần nào?</label><div class="seg" id="segWhich"><button class="on" data-w="LR">Cả đề</button><button data-w="L">Chỉ Nghe</button><button data-w="R">Chỉ Đọc</button></div>' : '') +
+      '<label style="margin-top:12px" id="limLab"></label><div class="row limrow"><input type="number" id="limMin" min="0" max="300" step="5" inputmode="numeric" style="width:96px"><span>phút</span><span class="chips" id="limChips"></span></div><div class="hint" id="limHint" style="margin-top:4px"></div>' +
       (cur ? '<div class="msg warn" style="margin-top:10px">Bộ đề này đang có bài làm dở. Bắt đầu mới sẽ <b>bỏ bài đang dở</b>.</div>' : '') +
       '<div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn" id="mNo">Để sau</button><button class="btn primary" id="mGo">Bắt đầu</button></div>');
     let which = hasL && hasR ? 'LR' : hasL ? 'L' : 'R';
-    $$('#segWhich button').forEach(b => b.onclick = () => { which = b.dataset.w; $$('#segWhich button').forEach(x => x.classList.toggle('on', x === b)); });
+    const hasAud = Object.keys(s.book.parts || {}).length > 0;
+    // đồng hồ đếm ngược: Thi thử có file nghe → tính cho phần Đọc (phần Nghe chạy theo băng); còn lại tính cho cả bài
+    const limAt = () => (mode === 'exam' && hasAud && which === 'LR' ? 'R' : 'start');
+    const limOff = () => mode === 'exam' && hasAud && which === 'L';
+    const limDef = () => { const sv = LS.get('tl.lim.' + mode + '.' + which, null); if (sv != null) return sv; return mode !== 'exam' ? 0 : which === 'R' || limAt() === 'R' ? READ_MIN : which === 'L' ? 45 : 120; };
+    const limPaint = () => {
+      const off = limOff();
+      $('#limLab').textContent = off ? 'Đồng hồ: phần Nghe chạy theo file nghe' : limAt() === 'R' ? 'Đếm ngược phần Đọc (phần Nghe chạy theo file nghe)' : 'Đồng hồ đếm ngược cho cả bài';
+      $('.limrow').classList.toggle('hide', off);
+      $('#limMin').value = limDef();
+      $('#limChips').innerHTML = (limAt() === 'R' || which === 'R' ? [75, 60, 45, 30] : which === 'L' ? [45, 30, 15] : [120, 90, 60, 30]).concat(mode === 'exam' ? [] : [0]).map(m => '<button class="chip" data-m="' + m + '">' + (m ? m : 'Không giới hạn') + '</button>').join('');
+      $$('#limChips .chip').forEach(c => c.onclick = () => { $('#limMin').value = c.dataset.m; });
+      $('#limHint').textContent = off ? '' : 'Hết giờ phần mềm tự nộp bài.' + (mode === 'exam' ? '' : ' Để 0 = không giới hạn (đồng hồ đếm lên).') + ' Thoát giữa chừng thì đồng hồ dừng, làm tiếp chạy tiếp.';
+    };
+    limPaint();
+    $$('#segWhich button').forEach(b => b.onclick = () => { which = b.dataset.w; $$('#segWhich button').forEach(x => x.classList.toggle('on', x === b)); limPaint(); });
     $('#mNo').onclick = closeModal;
-    $('#mGo').onclick = () => { closeModal(); begin(s, { mode, which, answers: {}, sec: null, page: null, lMax: null, inR: false, apos: null, played: {}, used: 0, rEnd: 0, reveal: {}, auto: true, zoom: 1, rate: 1, lDone: false }); };
+    $('#mGo').onclick = () => {
+      let lim = limOff() ? 0 : Math.max(0, Math.min(300, Math.round(+$('#limMin').value || 0)));
+      if (mode === 'exam' && !limOff() && !lim) lim = limDef() || READ_MIN;
+      if (!limOff()) LS.set('tl.lim.' + mode + '.' + which, lim);
+      closeModal();
+      begin(s, { mode, which, limit: lim, limAt: limAt(), answers: {}, sec: null, page: null, lMax: null, inR: false, apos: null, played: {}, used: 0, rEnd: 0, reveal: {}, auto: true, zoom: 1, rate: 1, lDone: false });
+    };
   }
   function resume(s) { const c = LS.get(curKey(s.id), null); if (c) begin(s, c); }
 
@@ -175,6 +267,7 @@
   }
   function saveCur() {
     if (!S || REVIEW()) return;
+    S.st.left = S.st.rEnd ? Math.max(0, Math.ceil((S.st.rEnd - Date.now()) / 1000)) : null;
     LS.set(curKey(S.set.id), S.st);
   }
   function pageAllowed(sec, pi) {
@@ -189,7 +282,7 @@
     const seq = audSeq(); if (!seq.length || S.st.lDone) return '';
     const k = A.k || (S.st.apos && S.st.apos.k);
     if (!k) return 'Bấm ▶ Bắt đầu phần nghe — trang đề sẽ tự lật theo file nghe.';
-    if (marksOf(k)) return 'Thi thử: trang tự lật ngay khi file nghe sang câu ở trang sau.';
+    if (marksOf(k) && !(S.set.book.mkAuto && S.set.book.mkAuto[k])) return 'Thi thử: trang tự lật ngay khi file nghe sang câu ở trang sau.';
     return '';
   }
 
@@ -208,7 +301,10 @@
     S.mapped = {}; S.secs.forEach(k => { S.mapped[k] = S.items.some(q => q.skill === k && q.page != null); });
     if (!st.sec || !S.secs.includes(st.sec)) st.sec = S.secs[0];
     if (st.page == null || !S.secPages[st.sec].includes(st.page)) st.page = S.secPages[st.sec][0];
-    if (EXAM() && st.sec === 'R' && !st.rEnd) { st.inR = true; st.rEnd = Date.now() + READ_MIN * 60000; }
+    if (st.limit == null) { st.limit = st.mode === 'exam' ? READ_MIN : 0; st.limAt = 'R'; }   // bài dở của bản 2.2
+    if (st.rEnd && st.left != null) st.rEnd = Date.now() + st.left * 1000;                      // làm tiếp: đồng hồ chạy tiếp từ chỗ dừng
+    if (EXAM() && st.sec === 'R') st.inR = true;
+    if (!REVIEW() && st.limit && !st.rEnd && (st.limAt === 'start' || st.sec === 'R')) st.rEnd = Date.now() + st.limit * 60000;
     document.body.classList.add('bookmode'); if (!REVIEW()) document.body.classList.add('exam');
     const rng = (k) => { const a = S.items.filter(q => q.skill === k).map(q => q.num); return a.length ? Math.min.apply(null, a) + '–' + Math.max.apply(null, a) : ''; };
     app.innerHTML = '<div class="qbar"><div class="wrap"><div class="tbox" id="tbox"><small id="tlab"></small><b id="tleft"></b></div>' +
@@ -236,6 +332,27 @@
     switchSec(st.sec, true);
     paintStatus(); paintTimer();
     window.scrollTo(0, 0);
+    if (!REVIEW()) ensureMarks();
+  }
+  /** Bộ đề dùng file nghe liền Part: dò mốc từng câu (chỉ lần đầu, lưu lại trong bộ đề) để trang tự lật */
+  async function ensureMarks() {
+    const me = S, set = S.set, bk = set.book;
+    if (!S.secs.includes('L') || !S.mapped.L) return;
+    const todo = audSeq().filter(k => !marksOf(k) && !(bk.mkTry && bk.mkTry[k]));
+    if (!todo.length) return;
+    S.scan = { i: 0, n: todo.length }; paintAudio();
+    for (const k of todo) {
+      if (S !== me) return;
+      S.scan.i++; paintAudio();
+      let mk = null; try { mk = await detectMarks(set, k); } catch (e) { mk = null; }
+      (bk.mkTry = bk.mkTry || {})[k] = mk ? 'ok' : 'no';
+      if (mk) { (bk.marks = bk.marks || {})[k] = mk; (bk.mkAuto = bk.mkAuto || {})[k] = true; }
+      try { await DB.put('sets', set); } catch (e) { /* bỏ qua */ }
+    }
+    if (S !== me) return;
+    S.scan = null; paintAudio();
+    const bad = todo.filter(k => bk.mkTry[k] !== 'ok');
+    toast(bad.length ? 'Không dò được mốc lật trang của ' + bad.map(k => (k === 'all' ? 'file nghe' : 'Part ' + k)).join(', ') + ' — phần đó em tự bấm Trang sau.' : 'Đã dò xong mốc lật trang từ file nghe.', bad.length ? '' : 'ok');
   }
   function tick() {
     if (!S) return;
@@ -247,12 +364,12 @@
     if (!S) return;
     const st = S.st, lab = $('#tlab'), tl = $('#tleft'); if (!tl) return;
     if (REVIEW()) { lab.textContent = 'Điểm'; tl.textContent = S.res ? (S.res.toeic && S.res.toeic.LR != null && S.res.full ? S.res.toeic.LR : S.res.c + '/' + S.res.n) : ''; return; }
-    if (EXAM() && st.rEnd) {
+    if (st.rEnd) {
       const left = Math.ceil((st.rEnd - Date.now()) / 1000);
-      lab.textContent = 'Đọc còn'; tl.textContent = fmtSec(Math.max(0, left));
+      lab.textContent = st.limAt === 'R' ? 'Đọc còn' : 'Còn lại'; tl.textContent = fmtSec(Math.max(0, left));
       $('#tbox').classList.toggle('low', left <= 300);
-      if (left <= 0) { submit('Hết ' + READ_MIN + ' phút phần Đọc'); return; }
-    } else { lab.textContent = EXAM() ? 'Phần Nghe' : 'Đã làm'; tl.textContent = fmtSec(st.used || 0); }
+      if (left <= 0) { submit('Hết giờ (' + st.limit + ' phút' + (st.limAt === 'R' ? ' phần Đọc' : '') + ')'); return; }
+    } else { lab.textContent = EXAM() && st.sec === 'L' ? 'Phần Nghe' : 'Đã làm'; tl.textContent = fmtSec(st.used || 0); }
   }
   function stopAudio() { if (A.el) { try { A.el.pause(); A.el.removeAttribute('src'); A.el.load(); } catch (e) { /* bỏ qua */ } } A.k = null; A.mark = ''; }
   function leave() {
@@ -272,20 +389,21 @@
   function enterReading(auto) {
     const st = S.st;
     stopAudio(); st.apos = null; st.inR = true;
-    if (EXAM() && !st.rEnd) st.rEnd = Date.now() + READ_MIN * 60000;
+    if (LIM() && !st.rEnd) st.rEnd = Date.now() + LIM() * 60000;
     switchSec('R', false, true); window.scrollTo({ top: 0 });
-    if (auto) toast('Hết phần Nghe — sang phần Đọc' + (EXAM() ? ' (' + READ_MIN + ' phút)' : ''), 'ok');
+    if (auto) toast('Hết phần Nghe — sang phần Đọc' + (LIM() ? ' (' + LIM() + ' phút)' : ''), 'ok');
   }
   function switchSec(k, keepPage, ok) {
     const st = S.st;
     if (k === 'L' && EXAM() && st.inR) { toast('Thi thử: đã sang phần Đọc — không quay lại phần Nghe.'); return; }
     if (k === 'R' && !keepPage && !ok && EXAM() && !st.inR && S.secs.includes('L')) {
-      modal('<h2 style="margin-top:0">Sang phần Đọc?</h2><p>Thi thử: sau khi sang phần <b>Reading</b>, em <b>không quay lại</b> phần Listening được nữa (file nghe dừng) và đồng hồ <b>' + READ_MIN + ' phút</b> bắt đầu chạy.</p><div class="row" style="justify-content:flex-end"><button class="btn" id="mNo">Ở lại phần Nghe</button><button class="btn primary" id="mYes">Sang phần Đọc</button></div>');
+      modal('<h2 style="margin-top:0">Sang phần Đọc?</h2><p>Thi thử: sau khi sang phần <b>Reading</b>, em <b>không quay lại</b> phần Listening được nữa (file nghe dừng)' + (LIM() && !st.rEnd ? ' và đồng hồ <b>' + LIM() + ' phút</b> bắt đầu đếm ngược' : '') + '.</p><div class="row" style="justify-content:flex-end"><button class="btn" id="mNo">Ở lại phần Nghe</button><button class="btn primary" id="mYes">Sang phần Đọc</button></div>');
       $('#mNo').onclick = closeModal;
       $('#mYes').onclick = () => { closeModal(); enterReading(false); };
       return;
     }
-    if (k === 'R' && EXAM()) { st.inR = true; if (!st.rEnd) st.rEnd = Date.now() + READ_MIN * 60000; }
+    if (k === 'R' && EXAM()) st.inR = true;
+    if (k === 'R' && LIM() && !st.rEnd && !REVIEW()) st.rEnd = Date.now() + LIM() * 60000;
     st.sec = k;
     $$('.bktab').forEach(b => { b.classList.toggle('on', b.dataset.sec === k); b.disabled = b.dataset.sec === 'L' && EXAM() && !!st.inR; });
     const pages = S.secPages[k];
@@ -463,6 +581,11 @@
     if (!seq.length) { box.innerHTML = '<div class="msg warn" style="margin:0">Bộ đề này chưa có file nghe — em vẫn xem trang đề và tô đáp án được. Muốn có tiếng: xóa bộ đề rồi nạp lại kèm file .mp3.</div>'; return; }
     const pname = (k) => (k === 'all' ? 'Toàn bộ' : 'Part ' + k);
     let main;
+    if (S.scan && !S.scanHide && !(el && A.k)) {
+      box.innerHTML = '<div class="row"><b>🎧 Phần nghe</b><span class="spacer"></span><button class="btn sm" id="aSkip">Bỏ qua, nghe luôn</button></div><div class="msg info" style="margin:8px 0 0">⏳ Đang dò mốc lật trang từ file nghe (chỉ lần đầu của bộ đề này): ' + S.scan.i + '/' + S.scan.n + '… Xong là bấm nghe được, trang sẽ tự lật theo băng.</div><div class="hint" id="aMsg"></div>';
+      $('#aSkip').onclick = () => { S.scanHide = true; paintAudio(); };
+      return;
+    }
     if (EXAM()) {
       if (playing) main = '<button class="btn" disabled>♪ Đang phát ' + pname(A.k) + '…</button>';
       else if (st.lDone) main = '<span class="pill ok">Đã nghe xong</span>';
