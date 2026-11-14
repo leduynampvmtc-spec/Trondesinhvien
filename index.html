@@ -73,12 +73,18 @@
       <a class="btn primary go" href="luyende.html">Mở Luyện đề TOEIC →</a>
     </section>
   </div>
+  <div class="card" style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <div style="flex:1;min-width:200px"><b>Mới dùng lần đầu?</b><div class="muted" style="font-size:.9rem">Xem hướng dẫn cài đặt, nạp bộ đề, thi thử và luyện tập.</div></div>
+    <a class="btn primary" href="huongdan.html">📖 Hướng dẫn sử dụng</a>
+    <a class="btn" id="apkHome" href="https://github.com/leduynampvmtc-spec/Trondesinhvien/releases/download/apk/TuHocToeic-Android.apk">🤖 Tải app Android (.apk)</a>
+  </div>
 </main>
-<footer class="foot" style="margin-top:30px"><div class="wrap row"><div id="authorBox"></div><span class="spacer"></span><span>Tự học TOEIC · v2.2.1</span></div></footer>
+<footer class="foot" style="margin-top:30px"><div class="wrap row"><div id="authorBox"></div><span class="spacer"></span><span>Tự học TOEIC · v2.2.2</span></div></footer>
 <script src="js/config.js"></script>
 <script src="js/common.js"></script>
 <script>
   QA.$('#authorBox').innerHTML = QA.AUTHOR_HTML;
+  if (/TronDeThiApp\//.test(navigator.userAgent)) QA.$('#apkHome').remove();
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>

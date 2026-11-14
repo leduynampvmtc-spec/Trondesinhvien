@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hướng dẫn sử dụng — Tự học TOEIC</title>
+<meta name="description" content="Hướng dẫn sử dụng phần mềm Tự học TOEIC: Sổ từ vựng và Luyện đề TOEIC — Lê Duy Nam, Giảng viên Trường Cao đẳng Dầu khí">
+<link rel="icon" href="img/icon-192.png">
+<meta name="theme-color" content="#0b3d5c">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<style>
+  .topbar .btn.sm { background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.3); color: #fff; }
+  .gd { max-width: 860px; margin: 0 auto; padding: 18px 16px 40px; }
+  .gd h1 { font-size: 1.5rem; margin: 6px 0 4px; }
+  .gd h2 { font-size: 1.18rem; margin: 0 0 10px; display: flex; align-items: center; gap: 10px; scroll-margin-top: 70px; }
+  .gd h2 .n { flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--brand-2); color: #fff; display: grid; place-items: center; font-size: .95rem; }
+  .gd .card { margin: 14px 0; }
+  .gd p, .gd li { line-height: 1.62; }
+  .gd ol, .gd ul { padding-left: 20px; margin: 8px 0; }
+  .toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+  .toc a { padding: 7px 12px; border-radius: 999px; background: var(--soft); border: 1px solid var(--line); color: var(--brand-2); font-weight: 600; font-size: .88rem; text-decoration: none; }
+  .two { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 18px; align-items: start; }
+  .two > div { min-width: 0; }
+  .ph { width: 210px; border-radius: 22px; border: 6px solid #10202c; overflow: hidden; background: #10202c; box-shadow: 0 8px 22px rgba(11,61,92,.18); }
+  .ph img { display: block; width: 100%; }
+  .phs { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: 12px; }
+  .plat { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 10px; }
+  .plat > div { min-width: 0; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; background: var(--soft); }
+  .plat b.t { display: block; margin-bottom: 4px; }
+  .linkbox { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .linkbox input { flex: 1; min-width: 0; font-size: .85rem; }
+  .cmp { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: .93rem; }
+  .cmp th, .cmp td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  .cmp th { background: var(--soft); }
+  .faq dt { font-weight: 700; margin-top: 12px; } .faq dd { margin: 4px 0 0; line-height: 1.6; color: var(--ink-2); }
+  @media (max-width: 640px) { .two { grid-template-columns: 1fr; } .two .ph { margin: 0 auto; } }
+</style>
+</head>
+<body>
+<header class="topbar"><div class="wrap"><a class="brand" href="index.html" style="color:#fff;text-decoration:none;display:flex;align-items:center;gap:10px"><span class="logo">T</span><b style="white-space:nowrap">Hướng dẫn</b></a><span class="spacer"></span><a class="btn sm" href="tuvung/index.html">Từ vựng</a><a class="btn sm" href="luyende.html">Luyện đề</a></div></header>
+<main class="gd">
+  <h1>Tự học TOEIC — hướng dẫn sử dụng</h1>
+  <p class="muted" style="margin:0">Một phần mềm, hai việc: <b>học từ vựng</b> mỗi ngày và <b>tự luyện đề TOEIC</b> như thi thật. Không cần tài khoản, không cần đăng ký.</p>
+  <div class="toc">
+    <a href="#cai">1. Cài đặt</a><a href="#tuvung">2. Sổ từ vựng</a><a href="#nap">3. Nạp bộ đề</a><a href="#thithu">4. Thi thử</a><a href="#luyen">5. Luyện tập</a><a href="#kq">6. Kết quả</a><a href="#faq">7. Hỏi đáp</a>
+  </div>
+
+  <section class="card" id="cai">
+    <h2><span class="n">1</span> Mở phần mềm trên máy của em</h2>
+    <div class="plat">
+      <div><b class="t">🍎 iPhone / iPad</b>Mở link bằng <b>Safari</b> → bấm nút <b>Chia sẻ</b> → <b>Thêm vào MH chính</b>. Từ đó mở bằng biểu tượng trên màn hình như một ứng dụng.</div>
+      <div id="platApk"><b class="t">🤖 Android</b>Tải file cài đặt <b>.apk</b>, mở file, cho phép “Cài ứng dụng không rõ nguồn gốc” rồi bấm Cài đặt. Hoặc dùng luôn bằng Chrome theo link.<br><a class="btn primary" id="apkBtn" style="margin-top:8px;display:inline-block" href="#">⬇ Tải app Android (.apk)</a></div>
+      <div><b class="t">💻 Windows / Mac</b>Mở link bằng Chrome, Edge hoặc Safari. Nạp bộ đề trên máy tính là nhanh nhất (chọn được cả thư mục nhiều đề).</div>
+    </div>
+    <label style="margin-top:12px">Link dùng trực tiếp (gửi cho bạn bè)</label>
+    <div class="linkbox"><input id="siteLink" readonly><button class="btn" id="copyLink">Sao chép</button></div>
+    <p style="margin:10px 0 0"><a id="pdfLink" href="#" target="_blank" rel="noopener">📄 Tải bản giới thiệu &amp; hướng dẫn dạng PDF (5 trang, để in hoặc gửi bạn bè)</a></p>
+    <p class="hint">Bộ đề và kết quả lưu ngay trên máy đang dùng, không gửi đi đâu. Đổi máy hoặc xóa dữ liệu trình duyệt thì phải nạp lại bộ đề.</p>
+  </section>
+
+  <section class="card" id="tuvung">
+    <h2><span class="n">2</span> Sổ từ vựng TOEIC</h2>
+    <div class="two"><div>
+      <ul>
+        <li><b>1.184 từ</b> chia thành 59 bài, mỗi bài khoảng 20 từ: loại từ, phiên âm, nghe phát âm, từ đồng nghĩa / trái nghĩa.</li>
+        <li>Chọn bài ở ô <b>Bài…</b>, rồi chọn kiểu học: <b>Anh → Việt</b>, <b>Việt → Anh</b>, <b>Flashcard</b>, <b>Điền từ</b>.</li>
+        <li><b>Đọc hiểu</b> (Part 7) và <b>Ngữ pháp</b> (Part 5) theo từng bài, có giải thích tiếng Việt.</li>
+        <li>Bấm <b>Kiểm tra</b> để chấm, <b>Làm lại câu sai</b> để ôn đúng những từ chưa thuộc; câu hỏi được xáo trộn mỗi lần.</li>
+        <li><b>Tra Anh–Việt / Việt–Anh</b> và <b>Dịch đoạn văn</b> ngay trong sổ.</li>
+      </ul>
+      <p class="hint">Mẹo: mỗi ngày học 1 bài (20 từ) theo thứ tự Flashcard → Anh–Việt → Điền từ, hôm sau làm lại câu sai của bài cũ trước khi sang bài mới.</p>
+    </div><div class="ph"><img src="img/hd/tuvung.jpg" alt="Sổ từ vựng" loading="lazy"></div></div>
+  </section>
+
+  <section class="card" id="nap">
+    <h2><span class="n">3</span> Nạp bộ đề TOEIC của em</h2>
+    <div class="two"><div>
+      <p>Phần mềm <b>không kèm sẵn bộ đề</b>. Em nạp bộ đề mình có (sách luyện thi, đề thầy cô gửi). Một bộ đề gồm: <b>PDF đề</b> (Listening, Reading), <b>file nghe .mp3</b>, <b>file đáp án</b> (PDF, Word, .txt hoặc ảnh chụp bảng đáp án).</p>
+      <ol>
+        <li>Vào <b>Luyện đề TOEIC</b> → bấm <b>＋ Nạp bộ đề</b>.</li>
+        <li><b>Nạp một bộ:</b> chọn file <b>.zip</b> của bộ đề, hoặc chọn cùng lúc các file PDF + mp3 + đáp án → <b>Bước tiếp: đọc file PDF đề</b> → <b>Lưu bộ đề vào máy</b>.</li>
+        <li><b>Nạp nhiều bộ một lúc:</b> chọn file .zip có nhiều Test (trên máy tính có thể chọn cả thư mục) → bấm <b>⚡ Nạp tất cả</b>, để nguyên màn hình đến khi báo xong (khoảng 1–2 phút mỗi bộ).</li>
+      </ol>
+      <p class="hint">PDF dạng ảnh scan: phần mềm không đọc được số câu, em điền “câu đầu mỗi trang” (vd 101, 109, 121…) ở bước đọc PDF hoặc bấm <b>Sửa đáp án</b> ở bộ đề. Mỗi bộ chiếm khoảng 60–80 MB trên máy.</p>
+    </div><div class="ph"><img src="img/hd/bode.jpg" alt="Danh sách bộ đề" loading="lazy"></div></div>
+  </section>
+
+  <section class="card" id="thithu">
+    <h2><span class="n">4</span> Thi thử — như thi thật</h2>
+    <div class="two"><div>
+      <ol>
+        <li>Bấm <b>📝 Thi thử</b> ở bộ đề, chọn làm <b>Cả đề / Chỉ Nghe / Chỉ Đọc</b> và đặt <b>đồng hồ đếm ngược</b> (mặc định 75 phút cho phần Đọc).</li>
+        <li>Bấm <b>▶ Bắt đầu phần nghe</b>. File nghe phát <b>một lần</b>, tự chuyển Part 1 → 4, không tạm dừng, không tua.</li>
+        <li><b>Trang đề tự lật theo file nghe</b> — ngay khi băng sang câu ở trang sau. Em tô đáp án ở <b>Phiếu trả lời</b> ngay dưới trang đề. <b>Không quay lại</b> trang đã qua.</li>
+        <li>Hết phần Nghe, phần mềm tự sang <b>phần Đọc</b> và bắt đầu đếm ngược. Trong phần Đọc em <b>lật tới, lật lui, sửa đáp án tự do</b>.</li>
+        <li>Bấm <b>Nộp bài</b>, hoặc hết giờ phần mềm tự nộp.</li>
+      </ol>
+      <p class="hint">Bộ đề chỉ có file nghe liền từng Part: lần đầu mở, phần mềm dò mốc từng câu trong file nghe (vài giây đến nửa phút) để biết lúc lật trang.</p>
+    </div><div class="ph"><img src="img/hd/nghe.jpg" alt="Thi thử phần nghe" loading="lazy"></div></div>
+    <div class="phs"><div class="ph"><img src="img/hd/thithu.jpg" alt="Đặt đồng hồ" loading="lazy"></div><div class="ph"><img src="img/hd/phieu.jpg" alt="Phiếu trả lời" loading="lazy"></div><div class="ph"><img src="img/hd/doc.jpg" alt="Phần đọc" loading="lazy"></div></div>
+  </section>
+
+  <section class="card" id="luyen">
+    <h2><span class="n">5</span> Luyện tập — học từ chỗ sai</h2>
+    <table class="cmp">
+      <tr><th></th><th>📝 Thi thử</th><th>🎯 Luyện tập</th></tr>
+      <tr><td><b>File nghe</b></td><td>Phát 1 lần, không dừng</td><td>Tạm dừng, tua ±10 giây, nghe lại từng Part, đổi tốc độ 0,75× – 1,25×</td></tr>
+      <tr><td><b>Trang phần Nghe</b></td><td>Tự lật, không quay lại</td><td>Tự lật (tắt được), quay lại trang trước thoải mái</td></tr>
+      <tr><td><b>Phần Đọc</b></td><td colspan="2">Xem lại, sửa đáp án tự do</td></tr>
+      <tr><td><b>Đáp án</b></td><td>Xem sau khi nộp</td><td>Bấm <b>👁 Đáp án trang này</b> để kiểm tra ngay</td></tr>
+      <tr><td><b>Đồng hồ</b></td><td>Đếm ngược, hết giờ tự nộp</td><td>Tự đặt số phút, hoặc để 0 = không giới hạn</td></tr>
+    </table>
+    <p class="hint">Thoát giữa chừng: bài làm được giữ lại, đồng hồ dừng. Lần sau bấm <b>▶ Làm tiếp bài đang dở</b>.</p>
+  </section>
+
+  <section class="card" id="kq">
+    <h2><span class="n">6</span> Kết quả và xem lại</h2>
+    <div class="two"><div>
+      <ul>
+        <li>Chấm ngay sau khi nộp: số câu đúng <b>Listening, Reading</b>, từng <b>Part</b> và <b>điểm TOEIC ước tính</b> (thang 10–990, quy đổi tuyến tính để tham khảo).</li>
+        <li><b>Đáp án chi tiết</b>: vòng xanh là đáp án đúng, vòng đỏ là câu em chọn sai. Bấm vào một câu để mở lại đúng trang đề của câu đó, nghe lại đoạn băng.</li>
+        <li><b>Lịch sử</b>: xem lại mọi lần làm để thấy mình tiến bộ thế nào.</li>
+      </ul>
+    </div><div class="ph"><img src="img/hd/ketqua.jpg" alt="Kết quả" loading="lazy"></div></div>
+  </section>
+
+  <section class="card faq" id="faq">
+    <h2><span class="n">7</span> Hỏi đáp nhanh</h2>
+    <dl>
+      <dt>Có cần mạng không?</dt><dd>Cần mạng lần đầu mở trang. Sau khi đã nạp bộ đề, làm bài không cần mạng. Bản Android (.apk) chạy hoàn toàn không cần mạng.</dd>
+      <dt>Trang đề không tự lật?</dt><dd>Kiểm tra bộ đề có file nghe chưa, và phần Nghe đã có “câu đầu mỗi trang” chưa (thẻ bộ đề sẽ báo đỏ nếu thiếu — bấm <b>Sửa đáp án</b> để điền). Khi Luyện tập, nhớ để dấu tích <b>Tự lật trang theo file nghe</b>.</dd>
+      <dt>Điểm bị thấp bất thường?</dt><dd>Có thể file đáp án bị đọc lệch. Bấm <b>Sửa đáp án</b> ở bộ đề để xem và sửa lại bảng đáp án.</dd>
+      <dt>Máy báo hết chỗ lưu?</dt><dd>Xóa bớt bộ đề đã làm xong (nút <b>Xóa</b> ở bộ đề) rồi nạp bộ mới.</dd>
+      <dt>Người khác có xem được bài của em không?</dt><dd>Không. Bộ đề, bài làm và điểm chỉ nằm trên máy của em.</dd>
+    </dl>
+  </section>
+  <div id="authorBox" style="margin-top:20px"></div>
+</main>
+<script src="js/config.js"></script>
+<script src="js/common.js"></script>
+<script>
+  var SITE = 'https://leduynampvmtc-spec.github.io/Trondesinhvien/';
+  var APK = 'https://github.com/leduynampvmtc-spec/Trondesinhvien/releases/download/apk/TuHocToeic-Android.apk';
+  QA.$('#authorBox').innerHTML = QA.AUTHOR_HTML;
+  QA.$('#siteLink').value = SITE;
+  QA.$('#apkBtn').href = APK;
+  QA.$('#pdfLink').href = SITE + 'Tu_hoc_TOEIC_Gioi_thieu_va_Huong_dan.pdf';
+  if (/TronDeThiApp\//.test(navigator.userAgent)) QA.$('#apkBtn').outerHTML = '<div class="pill ok" style="margin-top:8px;display:inline-block">Em đang dùng bản Android</div>';
+  QA.$('#copyLink').onclick = function () {
+    var i = QA.$('#siteLink'); i.select();
+    try { (navigator.clipboard ? navigator.clipboard.writeText(i.value) : Promise.reject()).catch(function () { document.execCommand('copy'); }); } catch (e) { document.execCommand('copy'); }
+    QA.toast('Đã sao chép link', 'ok');
+  };
+</script>
+</body>
+</html>
