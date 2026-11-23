@@ -191,6 +191,21 @@ textarea:focus-visible,input[type=search]:focus-visible{outline:3px solid var(--
 .small{font-size:.82rem;line-height:1.5}
 .dform input[type=password]{flex:1;min-width:0;font:500 1rem var(--mono);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .empty{padding:20px;color:var(--muted);text-align:center}
+.aibox{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px}
+.aiform{display:flex;gap:8px}.aiform textarea{flex:1;min-width:0;font:inherit;font-size:1rem;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg);color:var(--ink);resize:vertical;min-height:46px}
+.aichips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}.aichip{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:5px 11px;font:500 .84rem var(--sans);cursor:pointer}
+.aichip.h{color:var(--muted)}
+.aians{margin-top:12px;background:var(--paper);border:1px solid var(--accent);border-radius:14px;padding:14px 16px;line-height:1.62;overflow-wrap:anywhere}
+.aians h4{margin:12px 0 4px;font-size:1.02rem;color:var(--accent)}.aians h4:first-child{margin-top:0}
+.aians ul,.aians ol{margin:4px 0 8px;padding-left:20px}.aians li{margin:2px 0}.aians p{margin:4px 0 8px}
+.aians code{font:500 .9em var(--mono);background:var(--accent-soft);border-radius:5px;padding:0 4px}
+.aimeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:.84rem;color:var(--muted)}
+.aicur::after{content:"▍";animation:aiblink 1s steps(2) infinite;color:var(--accent)}@keyframes aiblink{50%{opacity:0}}
+.aiset{margin-top:14px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.aiset summary{cursor:pointer;font-weight:600}.aiset .steps{margin:8px 0}
+.aikey{display:flex;gap:8px;margin-top:8px}.aikey input{flex:1;min-width:0;font:inherit;border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--bg);color:var(--ink)}
+.aist{display:inline-flex;align-items:center;gap:6px;font-size:.86rem}.aist .dot{width:9px;height:9px;border-radius:50%;background:var(--bad)}.aist .dot.on{background:var(--ok)}
+.btn.aiq{margin-left:6px}
 @media (max-width:420px){.opts{grid-template-columns:1fr}.tabs button{font-size:.8rem}.card .front{font-size:1.6rem}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -218,6 +233,7 @@ textarea:focus-visible,input[type=search]:focus-visible{outline:3px solid var(--
       <button role="tab" data-mode="gram" aria-selected="false">Ngữ pháp</button>
       <button role="tab" data-mode="den" aria-selected="false">Tra Anh–Việt</button>
       <button role="tab" data-mode="dvi" aria-selected="false">Tra Việt–Anh</button>
+      <button role="tab" data-mode="ai" aria-selected="false">🤖 Hỏi AI</button>
       <button role="tab" data-mode="tr" aria-selected="false">Dịch đoạn văn</button>
     </div>
   </div>
@@ -263,6 +279,7 @@ function render(){
   document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===MODE));
   const tool=['den','dvi','tr','sync'].includes(MODE);$('.row1').hidden=tool;
   if(MODE==='sync')return renderSync();
+  if(MODE==='ai')return renderAI();
   if(MODE==='den')return renderDict('en');if(MODE==='dvi')return renderDict('vi');if(MODE==='tr')return renderTrans();
   const items=lessons[L];
   (({en:renderEN,vn:renderVN,fc:renderFC,fill:renderFill,read:renderRead,gram:renderGram})[MODE]||renderEN)(items);
@@ -344,13 +361,13 @@ function dictSearch(q,dir){
     if(sc)res.push([sc,o])});
   return res.sort((a,b)=>b[0]-a[0]||a[1].w.length-b[1].w.length).slice(0,12).map(r=>r[1]);
 }
-function dictCard(o){return `<article class="dcard"><div class="dhead"><h3>${esc(o.w)}</h3><span class="dsrc">Từ điển offline</span></div>${pron(o)}<div class="dmean">${esc(o.m)}</div></article>`}
+function dictCard(o){return `<article class="dcard"><div class="dhead"><h3>${esc(o.w)}</h3><span class="dsrc">Từ điển offline</span></div>${pron(o)}<div class="dmean">${esc(o.m)}</div><div><button class="btn sm aiq" style="margin-left:0" data-ai="${esc(o.w)}">🤖 Hỏi AI</button></div></article>`}
 function localCard(o){
   const li=lessonOf(o.n);const ex=o.s?esc(o.s).replace('___',`<b>${esc(o.a)}</b>`):'';
   return `<article class="dcard"><div class="dhead"><h3>${esc(o.w)}</h3><span class="dsrc">Sổ từ vựng · Bài ${li+1}</span></div>${pron(o)}
   <div class="dmean">${esc(o.m)}</div>${ex?`<div class="dex">${ex} ${spkBtn(o.s.replace('___',o.a))}</div>`:''}
   ${(o.sy||o.an||o.re)?`<dl class="rel">${o.sy?`<div><dt class="sy">Đồng nghĩa</dt><dd>${esc(o.sy)}</dd></div>`:''}${o.an?`<div><dt class="an">Trái nghĩa</dt><dd>${esc(o.an)}</dd></div>`:''}${o.re?`<div><dt class="re">Từ liên quan</dt><dd>${esc(o.re)}</dd></div>`:''}</dl>`:''}
-  <button class="btn sm golesson" data-l="${li}" data-n="${o.n}">Mở flashcard bài ${li+1}</button></article>`;
+  <div><button class="btn sm golesson" data-l="${li}" data-n="${o.n}">Mở flashcard bài ${li+1}</button><button class="btn sm aiq" data-ai="${esc(o.w)}">🤖 Hỏi AI</button></div></article>`;
 }
 function googleCard(g,q,sl,tl){
   const enWord=sl==='en'?q:g.trans;
@@ -360,7 +377,7 @@ function googleCard(g,q,sl,tl){
   if(g.defs.length)h+=`<div class="gsec"><div class="gh">Định nghĩa (tiếng Anh)</div>${g.defs.map(d=>`<div class="gpos"><span class="pos">${esc(posVi(d.pos))}</span><ol>${d.items.map(i=>`<li>${esc(i.g)}${i.ex?`<div class="dex">“${esc(i.ex)}” ${spkBtn(i.ex)}</div>`:''}</li>`).join('')}</ol></div>`).join('')}</div>`;
   if(g.syn.length)h+=`<div class="gsec"><div class="gh">Từ đồng nghĩa</div>${g.syn.map(s=>`<div><span class="pos">${esc(posVi(s.pos))}</span> ${esc(s.list.join(', '))}</div>`).join('')}</div>`;
   if(g.exs.length)h+=`<div class="gsec"><div class="gh">Ví dụ</div>${g.exs.map(e=>`<div class="dex">${esc(e)} ${spkBtn(e)}</div>`).join('')}</div>`;
-  return h+`<a class="glink" href="${gUrl(q,sl,tl)}" target="_blank" rel="noopener">Mở trên Google Dịch ↗</a></article>`;
+  return h+`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><a class="glink" href="${gUrl(q,sl,tl)}" target="_blank" rel="noopener">Mở trên Google Dịch ↗</a><button class="btn sm" data-ai="${esc(q)}">🤖 Hỏi AI về “${esc(q.length>24?q.slice(0,22)+'…':q)}”</button></div></article>`;
 }
 function renderDict(dir){
   const sl=dir,tl=dir==='en'?'vi':'en';const key='dq_'+dir;const last=store.get(key,'');
@@ -382,6 +399,142 @@ function renderDict(dir){
   $('#df').onsubmit=e=>{e.preventDefault();local();online();inp.blur()};
   if(last){local();online()}else inp.focus();
 }
+
+
+/* ---------- Hỏi AI (Gemini) — v2.3 ----------
+   Mã AI: mã riêng của người học (lưu trên máy) hoặc mã chung trong file ai-key.txt (dạng TVAI1:…, cạnh index.html).
+   Gọi thẳng Google Gemini từ trình duyệt, trả lời chảy dần (stream) để thấy chữ ngay. */
+const AIG='https://generativelanguage.googleapis.com/v1beta/';
+const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,String(v))}catch(e){}};
+const AIS='TuvungToeic-LDN';
+function aiXor(t){let o='';for(let i=0;i<t.length;i++)o+=String.fromCharCode(t.charCodeAt(i)^AIS.charCodeAt(i%AIS.length));return o}
+function aiEncode(k){return 'TVAI1:'+btoa(aiXor(k))}
+function aiDecode(c){try{c=String(c||'').trim();if(!c.startsWith('TVAI1:'))return '';const k=aiXor(atob(c.slice(6)));return /^[A-Za-z0-9_\-]{20,}$/.test(k)?k:''}catch(e){return ''}}
+let aiSharedP=null;
+function aiShared(){if(!aiSharedP)aiSharedP=fetch('ai-key.txt',{cache:'no-store'}).then(r=>r.ok?r.text():'').then(aiDecode).catch(()=>'');return aiSharedP}
+async function aiKey(){const own=lsGet('aiKey');if(own)return {k:own,own:true};const sh=await aiShared();return sh?{k:sh,own:false}:null}
+const AI_FALLBACK=['gemini-flash-lite-latest','gemini-flash-latest','gemini-3.5-flash-lite','gemini-3.1-flash-lite'];
+async function aiModels(key){
+  try{const c=JSON.parse(lsGet('aiModels')||'null');if(c&&c.k===key.slice(-6)&&Date.now()-c.t<5*864e5&&c.m.length)return c.m}catch(e){}
+  try{
+    const r=await fetch(AIG+'models?pageSize=300',{headers:{'x-goog-api-key':key}});if(!r.ok)throw 0;const j=await r.json();
+    const ver=n=>{const m=n.match(/gemini-(\d+(?:\.\d+)?)/);return m?parseFloat(m[1]):0};
+    const list=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent')).map(m=>m.name.replace(/^models\//,''))
+      .filter(n=>/^gemini-[\d.]+-flash/.test(n)&&!/(image|tts|live|audio|thinking|embed|exp|computer|native|robotics)/.test(n))
+      .map(n=>({n,s:(/lite/.test(n)?1000:0)+ver(n)*10-(/preview/.test(n)?50:0)-(/\d{2,}$/.test(n)?3:0)})).sort((a,b)=>b.s-a.s).map(x=>x.n);
+    const m=[...new Set([...list.slice(0,3),...AI_FALLBACK])];lsSet('aiModels',JSON.stringify({k:key.slice(-6),t:Date.now(),m}));return m;
+  }catch(e){return AI_FALLBACK}
+}
+const AI_SYS=`Bạn là trợ lý học TOEIC cho sinh viên cao đẳng Việt Nam (trình độ A2–B1). Luôn trả lời bằng tiếng Việt, ngắn gọn, dễ hiểu, dùng Markdown đơn giản (### tiêu đề, gạch đầu dòng, **in đậm**). Không quá 230 từ trừ khi được yêu cầu dài hơn.
+- Nếu người học gửi MỘT từ hoặc cụm từ tiếng Anh: dòng đầu "### từ /phiên âm IPA/ (loại từ)"; rồi các mục: **Nghĩa** (tối đa 3, kèm loại từ); **Họ từ** (n / v / adj / adv nếu có); **Cụm từ hay gặp trong TOEIC** (3–4 cụm kèm nghĩa); **Ví dụ** (2 câu kiểu TOEIC, mỗi câu kèm bản dịch); **Đồng nghĩa / trái nghĩa**; **Lưu ý Part 5** (1 dòng, nếu có bẫy hay gặp).
+- Nếu là từ tiếng Việt: đưa 2–3 từ tiếng Anh tương ứng, phân biệt cách dùng, mỗi từ 1 ví dụ.
+- Nếu là câu trắc nghiệm (Part 5/6): nêu đáp án đúng, giải thích vì sao đúng và vì sao các đáp án khác sai.
+- Nếu là câu hoặc đoạn tiếng Anh: dịch, rồi giải thích từ vựng và ngữ pháp then chốt.
+- Câu hỏi khác về tiếng Anh / TOEIC: trả lời đúng trọng tâm.
+Không bịa phiên âm hay nghĩa; không chắc thì bỏ qua mục đó.`;
+const AI_CHIPS=[['Giải nghĩa từ','negotiate'],['Phân biệt 2 từ','Phân biệt affect và effect'],['Đặt câu TOEIC','Đặt 3 câu kiểu TOEIC với từ "deadline"'],['Giải câu Part 5','The manager asked all staff to submit their reports ------- Friday.\n(A) by (B) until (C) on (D) at'],['Dịch & giải thích','Please be advised that the meeting has been rescheduled to next Monday.']];
+function aiErr(st,txt){
+  if(st===400&&/API_KEY_INVALID|API key not valid/i.test(txt))return 'Mã AI không đúng. Kiểm tra lại mã trong mục ⚙️ Mã AI bên dưới.';
+  if(st===403)return 'Mã AI bị chặn hoặc chưa bật Gemini API cho mã này. Thử tạo mã mới ở aistudio.google.com.';
+  if(st===429)return 'Đã hết lượt hỏi miễn phí của mã này (theo phút hoặc theo ngày). Đợi một lát rồi hỏi lại, hoặc dùng mã AI riêng.';
+  if(st>=500)return 'Máy chủ Google đang bận, hỏi lại sau ít giây.';
+  return 'Không hỏi được AI (lỗi '+st+').';
+}
+let aiCtl=null;
+async function aiAsk(prompt,onText){
+  const kk=await aiKey();if(!kk)throw new Error('NOKEY');
+  if(aiCtl)aiCtl.abort();const ctl=aiCtl=new AbortController();
+  const models=await aiModels(kk.k);let last='';
+  const pref=lsGet('aiModel');const order=pref&&models.includes(pref)?[pref,...models.filter(m=>m!==pref)]:models;
+  for(const m of order){
+    for(const think of (lsGet('aiNoThink')==='1'?[false]:[true,false])){
+      const gc={temperature:.4,maxOutputTokens:1400};if(think)gc.thinkingConfig={thinkingLevel:'minimal'};
+      let r;try{r=await fetch(AIG+'models/'+m+':streamGenerateContent?alt=sse',{method:'POST',signal:ctl.signal,headers:{'Content-Type':'application/json','x-goog-api-key':kk.k},
+        body:JSON.stringify({systemInstruction:{parts:[{text:AI_SYS}]},contents:[{role:'user',parts:[{text:prompt}]}],generationConfig:gc})})}
+      catch(e){if(e.name==='AbortError')throw e;throw new Error('Không kết nối được AI (đang không có mạng?).')}
+      if(!r.ok){const t=await r.text().catch(()=>'');last=aiErr(r.status,t);
+        if(r.status===400&&think&&/thinking/i.test(t)){lsSet('aiNoThink','1');continue}
+        if(r.status===404||(r.status===400&&/model/i.test(t)&&!/API key/i.test(t)))break; // mẫu này không có → thử mẫu khác
+        throw new Error(last)}
+      lsSet('aiModel',m);
+      const rd=r.body.getReader(),dec=new TextDecoder();let buf='',out='';
+      while(true){const {done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});let i;
+        while((i=buf.indexOf('\n'))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);if(!line.startsWith('data:'))continue;
+          try{const j=JSON.parse(line.slice(5));const parts=((j.candidates||[])[0]||{}).content;const t=parts&&parts.parts?parts.parts.filter(p=>!p.thought).map(p=>p.text||'').join(''):'';if(t){out+=t;onText(out)}}catch(e){}}}
+      if(!out)throw new Error('AI không trả lời (có thể câu hỏi bị chặn). Thử hỏi cách khác.');
+      return {text:out,model:m,own:kk.own};
+    }
+  }
+  throw new Error(last||'Không tìm thấy mẫu AI phù hợp cho mã này.');
+}
+function aiMd(t){
+  const inl=x=>esc(x).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g,'$1<i>$2</i>').replace(/`([^`]+)`/g,'<code>$1</code>');
+  let h='',list='';const close=()=>{if(list){h+='</'+list+'>';list=''}};
+  String(t).split('\n').forEach(l=>{const s=l.trim();let m;
+    if(!s){close();return}
+    if((m=s.match(/^#{1,6}\s+(.*)/))){close();h+='<h4>'+inl(m[1])+'</h4>';return}
+    if((m=s.match(/^[-*•]\s+(.*)/))){if(list!=='ul'){close();h+='<ul>';list='ul'}h+='<li>'+inl(m[1])+'</li>';return}
+    if((m=s.match(/^\d+[.)]\s+(.*)/))){if(list!=='ol'){close();h+='<ol>';list='ol'}h+='<li>'+inl(m[1])+'</li>';return}
+    close();h+='<p>'+inl(s)+'</p>'});
+  close();return h;
+}
+const aiCache={get(q){try{const c=JSON.parse(lsGet('aiCache')||'{}');return c[q.trim().toLowerCase()]||null}catch(e){return null}},
+  set(q,a){try{const c=JSON.parse(lsGet('aiCache')||'{}');c[q.trim().toLowerCase()]={a,t:Date.now()};const ks=Object.keys(c).sort((x,y)=>c[y].t-c[x].t);ks.slice(150).forEach(k=>delete c[k]);lsSet('aiCache',JSON.stringify(c))}catch(e){}}};
+function aiHist(add){let h=[];try{h=JSON.parse(lsGet('aiHist')||'[]')}catch(e){}if(add){h=[add,...h.filter(x=>x.toLowerCase()!==add.toLowerCase())].slice(0,8);lsSet('aiHist',JSON.stringify(h))}return h}
+function aiPrompt(q){
+  const x=norm(q);const o=DATA.find(o=>!o.g&&(norm(o.w)===x||norm(o.a)===x));
+  return o?q+`\n\n(Gợi ý: trong sổ từ vựng của lớp, "${o.w}" nghĩa là: ${o.m}. Trình bày phù hợp với nghĩa này trước.)`:q;
+}
+async function renderAIKeyBox(){
+  const box=$('#aiset');if(!box)return;const own=lsGet('aiKey');const sh=await aiShared();const gv=/giaovien/.test(location.hash);
+  const st=own?'<span class="aist"><span class="dot on"></span>Đang dùng <b>mã AI riêng của em</b></span>':sh?'<span class="aist"><span class="dot on"></span>Đang dùng <b>mã AI chung</b> của lớp</span>':'<span class="aist"><span class="dot"></span>Chưa có mã AI</span>';
+  box.innerHTML=`<summary>⚙️ Mã AI — ${own?'mã riêng':sh?'mã chung':'chưa có'}</summary><div style="margin-top:8px">${st}</div>
+  <p class="muted small" style="margin:8px 0 4px">${sh&&!own?'Em dùng được ngay. Khi mã chung báo hết lượt, em có thể tạo mã riêng miễn phí (khoảng 2 phút):':'Tạo mã AI miễn phí của Google (khoảng 2 phút, chỉ cần tài khoản Gmail):'}</p>
+  <ol class="steps"><li>Mở <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey ↗</a>, đăng nhập Gmail, đồng ý điều khoản.</li><li>Bấm <b>Create API key</b> (Tạo khóa API), rồi bấm <b>Copy</b>.</li><li>Dán vào ô dưới, bấm <b>Lưu mã</b>.</li></ol>
+  <form class="aikey" id="aikf"><input type="password" id="aikIn" placeholder="${own?'Đã lưu mã riêng — dán mã mới để thay':'Dán mã AI (bắt đầu bằng AIza…)'}" autocomplete="off" spellcheck="false"><button class="btn primary" type="submit">Lưu mã</button></form>
+  ${own?'<div class="actions" style="margin-top:8px"><button class="btn" id="aikDel">Xóa mã riêng</button></div>':''}
+  <p class="muted small" style="margin:8px 0 0">Mã được lưu trên máy này, chỉ gửi tới Google khi hỏi AI. Gói miễn phí của Google có giới hạn số câu hỏi mỗi phút / mỗi ngày.</p>
+  ${gv&&own?`<div class="mode-note" style="margin-top:10px"><b>Giáo viên — mã chung cho cả lớp:</b> nội dung file <code>ai-key.txt</code> là<br><code id="aiShareCode" style="user-select:all;word-break:break-all">${esc(aiEncode(own))}</code><div class="actions" style="margin-top:6px"><button class="btn" id="aiShareCp">Sao chép</button></div></div>`:''}`;
+  box.open=!own&&!sh;
+  $('#aikf').onsubmit=async e=>{e.preventDefault();const v=$('#aikIn').value.trim();if(!/^[A-Za-z0-9_\-]{30,}$/.test(v)){toast('Mã AI không đúng dạng (thường bắt đầu bằng AIza…).');return}
+    lsSet('aiKey',v);lsSet('aiModels',null);lsSet('aiModel',null);toast('Đã lưu mã AI.');renderAIKeyBox();};
+  const d=$('#aikDel');if(d)d.onclick=()=>{lsSet('aiKey',null);lsSet('aiModels',null);lsSet('aiModel',null);toast('Đã xóa mã riêng.');renderAIKeyBox()};
+  const c=$('#aiShareCp');if(c)c.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText($('#aiShareCode').textContent).then(()=>toast('Đã sao chép.'))};
+}
+function renderAI(){
+  const last=lsGet('aiq')||'';
+  $('#main').innerHTML=`<div class="status"><span class="hint">Hỏi AI về từ vựng, cấu trúc, câu Part 5, hay dịch và giải thích một câu. Cần có mạng.</span></div>
+  <div class="aibox"><form class="aiform" id="aif"><textarea id="aiq" rows="2" placeholder="Gõ từ, cụm từ, câu hoặc câu hỏi… (vd: negotiate, phân biệt rise và raise)" enterkeyhint="send">${esc(last)}</textarea><button class="btn primary" type="submit">Hỏi</button></form>
+  <div class="aichips">${AI_CHIPS.map(([t,v])=>`<button class="aichip" type="button" data-v="${esc(v)}">${esc(t)}</button>`).join('')}</div>
+  <div class="aichips" id="aih"></div></div>
+  <div id="aiout"></div>
+  <details class="aiset" id="aiset"></details>`;
+  const inp=$('#aiq');
+  const hist=()=>{const h=aiHist();$('#aih').innerHTML=h.length?'<span class="muted small" style="align-self:center">Đã hỏi:</span>'+h.map(x=>`<button class="aichip h" type="button" data-q="${esc(x)}">${esc(x.length>28?x.slice(0,26)+'…':x)}</button>`).join(''):'';
+    document.querySelectorAll('#aih [data-q]').forEach(b=>b.onclick=()=>{inp.value=b.dataset.q;go(false)})};
+  const go=async(fresh)=>{
+    const q=inp.value.trim();if(!q){inp.focus();return}lsSet('aiq',q);aiHist(q);hist();inp.blur();
+    const out=$('#aiout');const en=/^[a-z][a-z' -]{0,40}$/i.test(q);
+    const head=`<div class="aimeta" style="margin-top:0">${en?spkBtn(q):''}<b style="color:var(--ink)">${esc(q.length>60?q.slice(0,58)+'…':q)}</b></div>`;
+    const cached=!fresh&&aiCache.get(q);
+    if(cached){out.innerHTML=`<div class="aians">${head}${aiMd(cached.a)}<div class="aimeta">Đã lưu trên máy · <button class="btn sm" id="aire">Hỏi lại AI</button><button class="btn sm" id="aicp">Sao chép</button></div></div>`;bindOut(cached.a);return}
+    out.innerHTML=`<div class="aians">${head}<div id="aitx"><span class="muted aicur">AI đang trả lời</span></div></div>`;
+    const t0=Date.now();
+    try{const r=await aiAsk(aiPrompt(q),txt=>{const el=$('#aitx');if(el)el.innerHTML=aiMd(txt).replace(/<\/(p|li)>([^<]*)$/,'<span class="aicur"></span></$1>$2')});
+      aiCache.set(q,r.text);if(!$('#aitx'))return;
+      $('#aitx').outerHTML=aiMd(r.text)+`<div class="aimeta">AI (${esc(r.model)}) · ${((Date.now()-t0)/1000).toFixed(1)} giây${r.own?'':' · mã chung'} · <button class="btn sm" id="aire">Hỏi lại</button><button class="btn sm" id="aicp">Sao chép</button></div>`;bindOut(r.text);
+    }catch(e){if(e.name==='AbortError')return;const el=$('#aitx');if(!el)return;
+      if(e.message==='NOKEY'){el.innerHTML='<div class="empty" style="margin:0">Chưa có mã AI. Mở mục <b>⚙️ Mã AI</b> bên dưới để thêm mã (miễn phí).</div>';const s=$('#aiset');if(s){s.open=true;s.scrollIntoView({behavior:'smooth',block:'start'})}}
+      else{el.innerHTML=`<div class="empty" style="margin:0">${esc(e.message)}</div>`;if(/Mã AI|mã riêng/.test(e.message)){const s=$('#aiset');if(s)s.open=true}}}
+  };
+  const bindOut=a=>{const r=$('#aire');if(r)r.onclick=()=>go(true);const c=$('#aicp');if(c)c.onclick=()=>{(navigator.clipboard?navigator.clipboard.writeText(a):Promise.reject()).then(()=>toast('Đã sao chép.'),()=>toast('Không sao chép được.'))}};
+  document.querySelectorAll('.aichip[data-v]').forEach(b=>b.onclick=()=>{inp.value=b.dataset.v;inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length)});
+  inp.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();go(false)}};
+  $('#aif').onsubmit=e=>{e.preventDefault();go(false)};
+  hist();renderAIKeyBox();
+  if(lsGet('aiAuto')==='1'&&last){lsSet('aiAuto',null);go(false)}else if(!last)inp.focus();
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-ai]');if(!b)return;e.preventDefault();lsSet('aiq',b.dataset.ai);lsSet('aiAuto','1');MODE='ai';save();render();window.scrollTo(0,0)});
 
 /* ---------- Dịch đoạn văn ---------- */
 function chunks(text,max){const parts=text.match(/[^.!?\n]+[.!?]*\s*|\n+/g)||[text];const out=[];let cur='';parts.forEach(p=>{if((cur+p).length>max&&cur){out.push(cur);cur=''}cur+=p});if(cur)out.push(cur);return out}
