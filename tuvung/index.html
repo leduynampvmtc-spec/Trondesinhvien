@@ -409,7 +409,7 @@ const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=
 const AIS='TuvungToeic-LDN';
 function aiXor(t){let o='';for(let i=0;i<t.length;i++)o+=String.fromCharCode(t.charCodeAt(i)^AIS.charCodeAt(i%AIS.length));return o}
 function aiEncode(k){return 'TVAI1:'+btoa(aiXor(k))}
-function aiDecode(c){try{c=String(c||'').trim();if(!c.startsWith('TVAI1:'))return '';const k=aiXor(atob(c.slice(6)));return /^[A-Za-z0-9_\-]{20,}$/.test(k)?k:''}catch(e){return ''}}
+function aiDecode(c){try{c=String(c||'').trim();if(!c.startsWith('TVAI1:'))return '';const k=aiXor(atob(c.slice(6)));return /^[A-Za-z0-9._\-]{20,}$/.test(k)?k:''}catch(e){return ''}}
 let aiSharedP=null;
 function aiShared(){if(!aiSharedP)aiSharedP=fetch('ai-key.txt',{cache:'no-store'}).then(r=>r.ok?r.text():'').then(aiDecode).catch(()=>'');return aiSharedP}
 async function aiKey(){const own=lsGet('aiKey');if(own)return {k:own,own:true};const sh=await aiShared();return sh?{k:sh,own:false}:null}
@@ -434,7 +434,7 @@ const AI_SYS=`Bạn là trợ lý học TOEIC cho sinh viên cao đẳng Việt 
 Không bịa phiên âm hay nghĩa; không chắc thì bỏ qua mục đó.`;
 const AI_CHIPS=[['Giải nghĩa từ','negotiate'],['Phân biệt 2 từ','Phân biệt affect và effect'],['Đặt câu TOEIC','Đặt 3 câu kiểu TOEIC với từ "deadline"'],['Giải câu Part 5','The manager asked all staff to submit their reports ------- Friday.\n(A) by (B) until (C) on (D) at'],['Dịch & giải thích','Please be advised that the meeting has been rescheduled to next Monday.']];
 function aiErr(st,txt){
-  if(st===400&&/API_KEY_INVALID|API key not valid/i.test(txt))return 'Mã AI không đúng. Kiểm tra lại mã trong mục ⚙️ Mã AI bên dưới.';
+  if((st===400&&/API_KEY_INVALID|API key not valid/i.test(txt))||st===401)return 'Mã AI không đúng. Kiểm tra lại mã trong mục ⚙️ Mã AI bên dưới.';
   if(st===403)return 'Mã AI bị chặn hoặc chưa bật Gemini API cho mã này. Thử tạo mã mới ở aistudio.google.com.';
   if(st===429)return 'Đã hết lượt hỏi miễn phí của mã này (theo phút hoặc theo ngày). Đợi một lát rồi hỏi lại, hoặc dùng mã AI riêng.';
   if(st>=500)return 'Máy chủ Google đang bận, hỏi lại sau ít giây.';
@@ -491,12 +491,12 @@ async function renderAIKeyBox(){
   box.innerHTML=`<summary>⚙️ Mã AI — ${own?'mã riêng':sh?'mã chung':'chưa có'}</summary><div style="margin-top:8px">${st}</div>
   <p class="muted small" style="margin:8px 0 4px">${sh&&!own?'Em dùng được ngay. Khi mã chung báo hết lượt, em có thể tạo mã riêng miễn phí (khoảng 2 phút):':'Tạo mã AI miễn phí của Google (khoảng 2 phút, chỉ cần tài khoản Gmail):'}</p>
   <ol class="steps"><li>Mở <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey ↗</a>, đăng nhập Gmail, đồng ý điều khoản.</li><li>Bấm <b>Create API key</b> (Tạo khóa API), rồi bấm <b>Copy</b>.</li><li>Dán vào ô dưới, bấm <b>Lưu mã</b>.</li></ol>
-  <form class="aikey" id="aikf"><input type="password" id="aikIn" placeholder="${own?'Đã lưu mã riêng — dán mã mới để thay':'Dán mã AI (bắt đầu bằng AIza…)'}" autocomplete="off" spellcheck="false"><button class="btn primary" type="submit">Lưu mã</button></form>
+  <form class="aikey" id="aikf"><input type="password" id="aikIn" placeholder="${own?'Đã lưu mã riêng — dán mã mới để thay':'Dán mã AI (bắt đầu bằng AQ. hoặc AIza)'}" autocomplete="off" spellcheck="false"><button class="btn primary" type="submit">Lưu mã</button></form>
   ${own?'<div class="actions" style="margin-top:8px"><button class="btn" id="aikDel">Xóa mã riêng</button></div>':''}
   <p class="muted small" style="margin:8px 0 0">Mã được lưu trên máy này, chỉ gửi tới Google khi hỏi AI. Gói miễn phí của Google có giới hạn số câu hỏi mỗi phút / mỗi ngày.</p>
   ${gv&&own?`<div class="mode-note" style="margin-top:10px"><b>Giáo viên — mã chung cho cả lớp:</b> nội dung file <code>ai-key.txt</code> là<br><code id="aiShareCode" style="user-select:all;word-break:break-all">${esc(aiEncode(own))}</code><div class="actions" style="margin-top:6px"><button class="btn" id="aiShareCp">Sao chép</button></div></div>`:''}`;
   box.open=!own&&!sh;
-  $('#aikf').onsubmit=async e=>{e.preventDefault();const v=$('#aikIn').value.trim();if(!/^[A-Za-z0-9_\-]{30,}$/.test(v)){toast('Mã AI không đúng dạng (thường bắt đầu bằng AIza…).');return}
+  $('#aikf').onsubmit=async e=>{e.preventDefault();const v=$('#aikIn').value.trim();if(!/^[A-Za-z0-9._\-]{30,}$/.test(v)){toast('Mã AI không đúng dạng (thường bắt đầu bằng AQ. hoặc AIza).');return}
     lsSet('aiKey',v);lsSet('aiModels',null);lsSet('aiModel',null);toast('Đã lưu mã AI.');renderAIKeyBox();};
   const d=$('#aikDel');if(d)d.onclick=()=>{lsSet('aiKey',null);lsSet('aiModels',null);lsSet('aiModel',null);toast('Đã xóa mã riêng.');renderAIKeyBox()};
   const c=$('#aiShareCp');if(c)c.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText($('#aiShareCode').textContent).then(()=>toast('Đã sao chép.'))};
