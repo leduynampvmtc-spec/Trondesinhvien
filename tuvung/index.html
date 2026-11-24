@@ -299,7 +299,11 @@ document.addEventListener('click',e=>{const b=e.target.closest('.spk');if(b){e.p
 let VOICES=[];try{VOICES=speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>{VOICES=speechSynthesis.getVoices()}}catch(e){}
 let AUD=null;
 function speak(t,lang){
-  lang=lang||'en';const want=lang==='vi'?/^vi/i:/^en(-|_)US/i;
+  lang=lang||'en';
+  // Bản Android (APK): dùng giọng đọc có sẵn của máy qua cầu nối AndroidTTS
+  if(window.AndroidTTS){try{if(AndroidTTS.speak(String(t),lang))return}catch(e){}
+    if(!navigator.onLine){toast('Máy chưa có giọng đọc '+(lang==='vi'?'tiếng Việt':'tiếng Anh')+'. Mở Cài đặt › Chuyển văn bản thành giọng nói để tải giọng đọc.');try{AndroidTTS.install()}catch(e){}return}}
+  const want=lang==='vi'?/^vi/i:/^en(-|_)US/i;
   const v=VOICES.find(v=>want.test(v.lang))||(lang==='en'&&VOICES.find(v=>/^en/i.test(v.lang)));
   if(CAN_SPEAK&&v){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=v.lang;u.voice=v;u.rate=.9;speechSynthesis.speak(u);return}catch(e){}}
   try{if(AUD)AUD.pause();AUD=new Audio('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl='+lang+'&q='+encodeURIComponent(String(t).slice(0,190)));AUD.play().catch(()=>toast('Máy chưa có giọng đọc và đang không có mạng.'))}catch(e){toast('Không phát được âm thanh.')}
