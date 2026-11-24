@@ -39,7 +39,9 @@ jobs:
           if [ -f apk-key.jks ]; then KEYCFG="signingConfigs { fixed { storeFile file('../../apk-key.jks'); storePassword 'tuhoctoeic'; keyAlias 'tuhoctoeic'; keyPassword 'tuhoctoeic' } }; buildTypes { debug { signingConfig signingConfigs.fixed } }"; fi
           A=android; rm -rf $A; mkdir -p $A/app/src/main/java/vn/edu/pvcollege/tuhoctoeic $A/app/src/main/res/values $A/app/src/main/res/mipmap $A/app/src/main/assets
           W=$A/app/src/main/assets/app; mkdir -p $W
-          cp index.html luyende.html huongdan.html manifest.webmanifest $W/
+          for f in index.html luyende.html css img js tuvung; do [ -e "$f" ] || { echo "::error title=Thieu file tren repo::Khong thay $f o goc repo - hay keo tha lai TOAN BO noi dung goi TuHocToeic_SinhVien len repo"; exit 1; }; done
+          cp index.html luyende.html $W/
+          for f in huongdan.html manifest.webmanifest; do [ -f "$f" ] && cp "$f" $W/ || echo "::warning::Repo chua co $f (goi web cu?)"; done
           cp -r css img js tuvung $W/
           rm -f $W/sw.js $W/tuvung/sw.js
           cp img/icon-512.png $A/app/src/main/res/mipmap/ic_launcher.png
@@ -74,6 +76,7 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
+              <queries><intent><action android:name="android.intent.action.TTS_SERVICE" /></intent></queries>
               <application android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:theme="@style/AppTheme" android:usesCleartextTraffic="false">
                   <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|uiMode">
                       <intent-filter>
@@ -107,6 +110,8 @@ jobs:
           import android.net.Uri;
           import android.os.Build;
           import android.os.Bundle;
+          import android.speech.tts.TextToSpeech;
+          import java.util.Locale;
           import android.view.WindowManager;
           import android.webkit.*;
           import android.widget.Toast;
@@ -117,7 +122,35 @@ jobs:
           import java.util.HashMap;
 
           /** Tự học TOEIC (Sổ từ vựng + Luyện đề) — bản Android cho sinh viên. Phần mềm: Lê Duy Nam — GV Trường CĐ Dầu khí */
-          public class MainActivity extends Activity {
+          public class MainActivity extends Activity implements TextToSpeech.OnInitListener {
+              TextToSpeech tts; volatile int ttsState = 0; String ttsPendText, ttsPendLang;
+              @Override public void onInit(int st) {
+                  ttsState = st == TextToSpeech.SUCCESS ? 1 : -1;
+                  if (ttsState == 1) { try { tts.setSpeechRate(0.9f); } catch (Exception e) { } if (ttsPendText != null) { say(ttsPendText, ttsPendLang); ttsPendText = null; } }
+              }
+              boolean say(String text, String lang) {
+                  try {
+                      Locale loc = "vi".equals(lang) ? new Locale("vi", "VN") : Locale.US;
+                      int r = tts.setLanguage(loc);
+                      if (r < 0 && !"vi".equals(lang)) r = tts.setLanguage(Locale.ENGLISH);
+                      if (r < 0) return false;
+                      return tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "tv") == TextToSpeech.SUCCESS;
+                  } catch (Exception e) { return false; }
+              }
+              /** Gọi từ trang web: window.AndroidTTS.speak(text, lang) */
+              class TtsBridge {
+                  @JavascriptInterface public boolean speak(String text, String lang) {
+                      if (tts == null || ttsState < 0 || text == null) return false;
+                      if (text.length() > 3000) text = text.substring(0, 3000);
+                      if (ttsState == 0) { ttsPendText = text; ttsPendLang = lang; return true; }
+                      return say(text, lang);
+                  }
+                  @JavascriptInterface public void stop() { try { if (tts != null) tts.stop(); } catch (Exception e) { } }
+                  @JavascriptInterface public int state() { return ttsState; }
+                  @JavascriptInterface public void install() {
+                      runOnUiThread(() -> { try { startActivity(new Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA)); } catch (Exception e) { try { startActivity(new Intent("com.android.settings.TTS_SETTINGS")); } catch (Exception e2) { } } });
+                  }
+              }
               static final String LOCAL = "https://appassets.androidplatform.net/assets/app/";
               static final HashMap<String, String> MIME = new HashMap<>();
               static {
@@ -187,6 +220,8 @@ jobs:
                       if (url.startsWith("http")) { try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception e) { } }
                       else Toast.makeText(this, "Bản Android không tải file về máy được.", Toast.LENGTH_LONG).show();
                   });
+                  tts = new TextToSpeech(this, this);
+                  web.addJavascriptInterface(new TtsBridge(), "AndroidTTS");
                   setContentView(web);
                   getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                   Uri data = getIntent() != null ? getIntent().getData() : null;
@@ -213,6 +248,7 @@ jobs:
                   } else super.onActivityResult(code, res, data);
               }
               @Override protected void onSaveInstanceState(Bundle o) { super.onSaveInstanceState(o); web.saveState(o); }
+              @Override protected void onDestroy() { try { if (tts != null) tts.shutdown(); } catch (Exception e) { } super.onDestroy(); }
               @Override public void onBackPressed() { if (web.canGoBack()) web.goBack(); else super.onBackPressed(); }
           }
           EOF
